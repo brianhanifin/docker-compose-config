@@ -3,16 +3,4 @@
 *.ovpn
 
 # Directory (contents) ignores
-/containerd
-/dockermon
-/grafana
-/homeassistant
-/influxdb
-/jupyterlab
-/letsencrypt
-/mosquitto
-/nodered
-/openvpn-data-home
-/plex
-/portainer
-/unifi
+/*

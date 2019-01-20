@@ -1,0 +1,19 @@
+{
+  "folders": [
+    {
+      "path": "."
+    },
+    {
+      "path": "/Volumes/config"
+    }
+  ],
+  "settings": {
+    // Configure editor settings to be overridden for [dash] language.
+    "[dash]": {
+      "editor.insertSpaces": true,
+      "editor.tabSize": 2,
+      "editor.autoIndent": false
+    }
+  }
+  
+}

@@ -1,0 +1,358 @@
+version: '3'
+services:
+
+  letsencrypt:
+    container_name: letsencrypt
+    environment:
+      - EMAIL=code@brianhanifin.com
+      #- SUBDOMAINS=grafana,hass,jupyter,muximux,nodered,organizr,plex,portainer
+      - SUBDOMAINS=grafana,hass,nodered,plex,portainer
+      - TZ=America/Los_Angeles # offset = -08:00 / DST -07:00
+      - URL=home.brianhanifin.com
+    image: linuxserver/letsencrypt
+    ports:
+       - 80:80
+       - 443:443
+    restart: on-failure
+    volumes:
+      - /opt/letsencrypt:/config:rw
+      #- /etc/letsencrypt:/etc/letsencrypt:ro
+      - /etc/localtime:/etc/localtime:ro
+
+  mosquitto:
+    image: eclipse-mosquitto
+    container_name: mosquitto
+    environment:
+      - TZ=America/Los_Angeles # offset = -08:00 / DST -07:00
+    ports:
+      - 1883:1883
+    restart: on-failure
+    user: "1000:1000"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /opt/mosquitto:/mosquitto/config:ro
+      - /opt/mosquitto:/mosquitto/data:rw
+      - /opt/mosquitto:/mosquitto/log:rw
+
+  influxdb:
+    image: influxdb
+    container_name: influxdb
+    environment:
+      - TZ=America/Los_Angeles # offset = -08:00 / DST -07:00
+    healthcheck:
+      test: ["CMD", "curl", "-sI", "http://127.0.0.1:8086/ping"]
+      interval: 30s
+      timeout: 1s
+      retries: 24
+    #network_mode: host
+    ports:
+      - 8083:8083
+      - 8086:8086
+    restart: on-failure
+    volumes:
+      - /opt/influxdb/influxdb.conf:/etc/influxdb/influxdb.conf:ro
+      - /opt/influxdb:/var/lib/influxdb
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    depends_on:
+      influxdb:
+        condition: service_healthy
+    environment:
+      - TZ=America/Los_Angeles # offset = -08:00 / DST -07:00
+    ports:
+      - 3000:3000
+    restart: on-failure
+    user: "1000:1000"
+    volumes:
+      - /opt/grafana:/etc/grafana:rw
+      - /opt/grafana:/var/lib/grafana:rw
+
+  homeassistant:
+    #image: homeassistant/home-assistant
+    image: homeassistant/home-assistant:0.85.1
+    #image: homeassistant/home-assistant:rc
+    #image: homeassistant/home-assistant:dev
+    container_name: homeassistant
+    depends_on:
+      influxdb:
+        condition: service_healthy
+      mosquitto:
+        condition: service_started
+    environment:
+      - TZ=America/Los_Angeles # offset = -08:00 / DST -07:00
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8123"]
+      interval: 30s
+      timeout: 10s
+      retries: 6
+    #logging:
+    #    driver: "json-file"
+    #    options:
+    #      max-size: "50m"
+    #      max-file: 3
+    network_mode: host
+    ports:
+      - "8123:8123"
+    restart: on-failure
+    volumes:
+      - /opt/homeassistant/config:/config
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - /etc/localtime:/etc/localtime:ro
+
+  # hass_playground:
+  #   image: homeassistant/home-assistant
+  #   #image: homeassistant/home-assistant:rc
+  #   #image: homeassistant/home-assistant:dev
+  #   container_name: hass_playground
+  #   depends_on:
+  #     influxdb:
+  #       condition: service_healthy
+  #     mosquitto:
+  #       condition: service_started
+  #   environment:
+  #     - TZ=America/Los_Angeles # offset = -08:00 / DST -07:00
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://127.0.0.1:8123"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 6
+  #   ##network_mode: host
+  #   ports:
+  #     - "9123:8123"
+  #   #restart: on-failure
+  #   volumes:
+  #     - /opt/homeassistant/config_dev:/config
+  #     - /etc/letsencrypt:/etc/letsencrypt:ro
+  #     - /etc/localtime:/etc/localtime:ro
+
+  portainer:
+    image: portainer/portainer
+    container_name: portainer
+    environment:
+      - TZ=America/Los_Angeles # offset = -08:00 / DST -07:00
+    ports:
+      - 9000:9000
+    restart: on-failure
+    volumes:
+      - /opt/portainer:/data:rw
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  unifi:
+    image: jacobalberty/unifi:latest
+    container_name: unifi
+    environment:
+      - TZ=America/Los_Angeles # offset = -08:00 / DST -07:00
+    #network_mode: host
+    ports:
+      - 3478:3478/udp
+      - 10001:10001/udp
+      - 6789:6789/tcp
+      - 8080:8080/tcp
+      - 8880:8880/tcp
+      - 8443:8443/tcp
+      - 8843:8843/tcp
+    restart: on-failure
+    volumes:
+      - /opt/unifi/data:/unifi/data:rw
+
+  plex:
+    container_name: plex
+    environment:
+      - TZ=America/Los_Angeles # offset = -08:00 / DST -07:00
+    image: plexinc/pms-docker
+    ports:
+      - 1900:1900/udp
+      - 3005:3005/tcp
+      - 32400:32400/tcp
+      - 32410:32410/udp
+      - 32412:32412/udp
+      - 32413:32413/udp
+      - 32414:32414/udp
+      - 32469:32469/tcp
+      - 8324:8324/tcp
+    restart: on-failure
+    volumes:
+      - /opt/plex/temp:/transcode:rw
+      - /opt/plex:/config:rw
+      - /media/backup:/data:rw
+      - /etc/localtime:/etc/localtime:ro
+
+  dockermon:
+    image: philhawthorne/ha-dockermon
+    container_name: dockermon
+    environment:
+      - TZ=America/Los_Angeles # offset = -08:00 / DST -07:00
+    ports:
+      - 8126:8126
+    restart: on-failure
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /opt/dockermon:/config
+
+  #muximux:
+  #  container_name: muximux
+  #  image: linuxserver/muximux
+  #  environment:
+  #    - TZ=America/Los_Angeles # offset = -08:00 / DST -07:00
+  #  healthcheck:
+  #    test: ["CMD", "curl", "-f", "http://127.0.0.1"]
+  #    interval: 30s
+  #    timeout: 10s
+  #    retries: 5
+  #  ports:
+  #    - 80:80
+  #    - 443:443
+  #  restart: on-failure
+  #  volumes:
+  #    - /opt/muximux:/config:rw
+
+  nodered:
+  #   #image: nodered/node-red-docker:slim
+    image: nodered/node-red-docker:v8
+  #   #image: nodered/node-red-docker:latest-v8
+  #   #image: machinedata/node-red
+  #  image: philipkazmeier/node-red-homeassistant:latest-v8
+    container_name: nodered
+    depends_on:
+      mosquitto:
+        condition: service_started
+      homeassistant:
+        condition: service_healthy
+    environment:
+      - TZ=America/Los_Angeles # offset = -08:00 / DST -07:00
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:1880"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    #links:
+    #  # Link ports from home-assistant container
+    #  - homeassistant
+    ports:
+      - 1880:1880
+      - 9229:9229
+    restart: on-failure
+    #user: root
+    user: "1000:1000"
+    volumes:
+      - /opt/nodered:/data
+  #     - /etc/letsencrypt/live/home.brianhanifin.com-0001/:/certs:ro
+  #     - /etc/letsencrypt:/etc/letsencrypt:ro
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+
+  #organizr:
+  #  container_name: organizr
+  #  image: lsiocommunity/organizr
+  #  environment:
+  #    - PGID=1000
+  #    - PUID=1000
+  #    - TZ=America/Los_Angeles # offset = -08:00 / DST -07:00
+  #  healthcheck:
+  #    test: ["CMD", "curl", "-f", "http://127.0.0.1"]
+  #    interval: 30s
+  #    timeout: 10s
+  #    retries: 5
+  #  ports:
+  #    - 80:80
+  #    - 443:443
+  #  restart: on-failure
+  #  volumes:
+  #    - /opt/organizr:/config:rw
+  #    - /etc/letsencrypt:/etc/letsencrypt:ro
+
+  #watchtower:
+  #  image: v2tec/watchtower
+  #  container_name: watchtower
+  #  command: --cleanup --label-enable
+  #  environment:
+  #    - TZ=America/Los_Angeles # offset = -08:00 / DST -07:00
+  #  restart: on-failure
+  #  volumes:
+  #    - /var/run/docker.sock:/var/run/docker.sock
+  #    - /opt/watchtower/config.json:/config.json:ro
+
+  # tasmoadmin:
+  #   image: raymondmm/tasmoadmin
+  #   container_name: tasmoadmin
+  #   environment:
+  #     - TZ=America/Los_Angeles # offset = -08:00 / DST -07:00
+  #   ports:
+  #     - 9999:80/tcp
+  #   restart: on-failure
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock
+  #     - /opt/tasmoadmin:/data
+
+  openvpn:
+    container_name: openvpn-data-home
+    environment:
+      - TZ=America/Los_Angeles # offset = -08:00 / DST -07:00
+    image: kylemanna/openvpn:latest
+    ports:
+      - 1194:1194/udp
+    cap_add:
+      - NET_ADMIN
+    restart: on-failure
+    volumes:
+      - /opt/openvpn-data-home:/etc/openvpn:rw
+
+  # wireguard:
+  #   container_name: wireguard
+  #   environment:
+  #     - TZ=America/Los_Angeles # offset = -08:00 / DST -07:00
+  #   image: activeeos/wireguard-docker
+  #   ports:
+  #     - 5555:5555/udp
+  #   cap_add:
+  #     - NET_ADMIN
+  #     - SYS_MODULE
+  #   restart: on-failure
+  #   volumes:
+  #     - /opt/wireguard:/etc/wireguard
+  #     - /lib/modules:/lib/modules
+  #     - /lib/wireguard:/lib/wireguard
+  #     - /usr/src:/usr/src:ro
+
+#  appdaemon:
+#    image: acockburn/appdaemon
+#    #image: acockburn/appdaemon:dev
+#    container_name: appdaemon
+#    depends_on:
+#      - homeassistant
+#    environment:
+#      - TZ=America/Los_Angeles # offset = -08:00 / DST -07:00
+#    healthcheck:
+#      test: ["CMD", "curl", "-f", "http://127.0.0.1:5050"]
+#      interval: 30s
+#      timeout: 10s
+#      retries: 5
+#    links:
+#      # Link ports from home-assistant container
+#      - homeassistant
+#    ##network_mode: bridge
+#    ports:
+#      - 5050:5050
+#      - 5001:5001
+#    restart: on-failure
+#    volumes:
+#      #- /opt/appdaemon:/conf
+#      - /opt/homeassistant/config/:/config
+#      - /opt/homeassistant/config/appdaemon:/conf
+#      - /etc/letsencrypt/live/home.brianhanifin.com-0001/:/certs:ro
+#      - /etc/letsencrypt:/etc/letsencrypt:ro
+#      - /etc/localtime:/etc/localtime:ro
+
+  # jupyterlab:
+  #   image: mikebirdgeneau/jupyterlab
+  #   container_name: jupyterlab
+  #   environment:
+  #     - TZ=America/Los_Angeles # offset = -08:00 / DST -07:00
+  #   ports:
+  #     - 8888:8888
+  #   restart: on-failure
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock
+  #     - /opt/jupyterlab:/opt/app/data

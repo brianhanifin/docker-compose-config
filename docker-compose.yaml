@@ -69,8 +69,8 @@ services:
       - /opt/grafana:/var/lib/grafana:rw
 
   homeassistant:
-    #image: homeassistant/home-assistant
-    image: homeassistant/home-assistant:0.85.1
+    image: homeassistant/home-assistant
+    #image: homeassistant/home-assistant:0.85.1
     #image: homeassistant/home-assistant:rc
     #image: homeassistant/home-assistant:dev
     container_name: homeassistant

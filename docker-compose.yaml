@@ -77,6 +77,8 @@ services:
     depends_on:
       - influxdb
       - mosquitto
+    devices:
+      - /dev/ttyACM0:/zwaveusbstick
     environment:
       - TZ=America/Los_Angeles # offset = -08:00 / DST -07:00
     healthcheck:

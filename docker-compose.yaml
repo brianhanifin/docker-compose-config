@@ -5,8 +5,8 @@ services:
     container_name: letsencrypt
     environment:
       - EMAIL=code@brianhanifin.com
-      #- SUBDOMAINS=grafana,hass,jupyter,muximux,nodered,organizr,plex,portainer
-      - SUBDOMAINS=grafana,hass,nodered,plex,portainer
+      #- SUBDOMAINS=grafana,hass,jupyter,muximux,organizr,plex,portainer
+      - SUBDOMAINS=hass,plex
       - TZ=America/Los_Angeles # offset = -08:00 / DST -07:00
       - URL=home.brianhanifin.com
     image: linuxserver/letsencrypt
@@ -279,18 +279,18 @@ services:
   #     - /var/run/docker.sock:/var/run/docker.sock
   #     - /opt/tasmoadmin:/data
 
-  openvpn:
-    container_name: openvpn-data-home
-    environment:
-      - TZ=America/Los_Angeles # offset = -08:00 / DST -07:00
-    image: kylemanna/openvpn:latest
-    ports:
-      - 1194:1194/udp
-    cap_add:
-      - NET_ADMIN
-    restart: on-failure
-    volumes:
-      - /opt/openvpn-data-home:/etc/openvpn:rw
+  #openvpn:
+  #  container_name: openvpn-data-home
+  #  environment:
+  #    - TZ=America/Los_Angeles # offset = -08:00 / DST -07:00
+  #  image: kylemanna/openvpn:latest
+  #  ports:
+  #    - 1194:1194/udp
+  #  cap_add:
+  #    - NET_ADMIN
+  #  restart: on-failure
+  #  volumes:
+  #    - /opt/openvpn-data-home:/etc/openvpn:rw
 
   # wireguard:
   #   container_name: wireguard

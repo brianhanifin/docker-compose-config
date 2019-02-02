@@ -6,7 +6,7 @@ services:
     environment:
       - EMAIL=code@brianhanifin.com
       #- SUBDOMAINS=grafana,hass,jupyter,muximux,organizr,plex,portainer
-      - SUBDOMAINS=hass,plex
+      - SUBDOMAINS=hass,hub,plex
       - TZ=America/Los_Angeles # offset = -08:00 / DST -07:00
       - URL=home.brianhanifin.com
     image: linuxserver/letsencrypt
@@ -16,7 +16,6 @@ services:
     restart: on-failure
     volumes:
       - /opt/letsencrypt:/config:rw
-      #- /etc/letsencrypt:/etc/letsencrypt:ro
       - /etc/localtime:/etc/localtime:ro
 
   mosquitto:
@@ -75,7 +74,7 @@ services:
     #image: homeassistant/home-assistant:dev
     container_name: homeassistant
     depends_on:
-      - influxdb
+      - hassdb
       - mosquitto
     devices:
       - /dev/ttyACM0:/zwaveusbstick
@@ -137,24 +136,20 @@ services:
     volumes:
       - /opt/portainer:/data:rw
       - /var/run/docker.sock:/var/run/docker.sock
+      - /etc/localtime:/etc/localtime:ro
 
-  unifi:
-    image: jacobalberty/unifi:latest
-    container_name: unifi
+  hassdb:
+    image: mariadb
+    container_name: hassdb
     environment:
-      - TZ=America/Los_Angeles # offset = -08:00 / DST -07:00
-    #network_mode: host
+      MYSQL_ROOT_PASSWORD: ekdUgWmminRWPBNVnc6Yfrzh
+      MYSQL_DATABASE: homeassistant
     ports:
-      - 3478:3478/udp
-      - 10001:10001/udp
-      - 6789:6789/tcp
-      - 8080:8080/tcp
-      - 8880:8880/tcp
-      - 8443:8443/tcp
-      - 8843:8843/tcp
-    restart: on-failure
+      - 3306:3306
+    restart: always
     volumes:
-      - /opt/unifi/data:/unifi/data:rw
+      - "/opt/mariadb:/var/lib/mysql"
+      - /etc/localtime:/etc/localtime:ro
 
   plex:
     container_name: plex
@@ -171,7 +166,7 @@ services:
       - 32414:32414/udp
       - 32469:32469/tcp
       - 8324:8324/tcp
-    restart: on-failure
+    restart: always
     volumes:
       - /opt/plex/temp:/transcode:rw
       - /opt/plex:/config:rw
@@ -189,23 +184,6 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /opt/dockermon:/config
-
-  #muximux:
-  #  container_name: muximux
-  #  image: linuxserver/muximux
-  #  environment:
-  #    - TZ=America/Los_Angeles # offset = -08:00 / DST -07:00
-  #  healthcheck:
-  #    test: ["CMD", "curl", "-f", "http://127.0.0.1"]
-  #    interval: 30s
-  #    timeout: 10s
-  #    retries: 5
-  #  ports:
-  #    - 80:80
-  #    - 443:443
-  #  restart: on-failure
-  #  volumes:
-  #    - /opt/muximux:/config:rw
 
   nodered:
     image: nodered/node-red-docker:v8
@@ -226,7 +204,7 @@ services:
     ports:
       - 1880:1880
       - 9229:9229
-    restart: on-failure
+    restart: always
     #user: root
     user: "1000:1000"
     volumes:
@@ -235,6 +213,40 @@ services:
   #     - /etc/letsencrypt:/etc/letsencrypt:ro
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
+
+  # humhub:
+  #   image: mriedmann/humhub
+  #   container_name: humhub
+  #   environment:
+  #     - TZ=America/Los_Angeles # offset = -08:00 / DST -07:00
+  #   links:
+  #     - "mariadb:db"
+  #   ports:
+  #     - 8000:80
+  #   restart: always
+  #   volumes:
+  #     - /opt/humhub:/var/www/localhost/htdocs/protected/config:rw
+  #     - /opt/humhub/uploads:/var/www/localhost/htdocs/uploads:rw
+  #     - /opt/humhub/uploads/protected:/var/www/localhost/htdocs/protected/uploads:rw
+  #     - /opt/humhub/modules:/var/www/localhost/htdocs/protected/modules:rw
+  #     - /etc/localtime:/etc/localtime:ro
+
+  #muximux:
+  #  container_name: muximux
+  #  image: linuxserver/muximux
+  #  environment:
+  #    - TZ=America/Los_Angeles # offset = -08:00 / DST -07:00
+  #  healthcheck:
+  #    test: ["CMD", "curl", "-f", "http://127.0.0.1"]
+  #    interval: 30s
+  #    timeout: 10s
+  #    retries: 5
+  #  ports:
+  #    - 80:80
+  #    - 443:443
+  #  restart: on-failure
+  #  volumes:
+  #    - /opt/muximux:/config:rw
 
   #organizr:
   #  container_name: organizr
@@ -338,14 +350,36 @@ services:
 #      - /etc/letsencrypt:/etc/letsencrypt:ro
 #      - /etc/localtime:/etc/localtime:ro
 
-  # jupyterlab:
-  #   image: mikebirdgeneau/jupyterlab
-  #   container_name: jupyterlab
-  #   environment:
-  #     - TZ=America/Los_Angeles # offset = -08:00 / DST -07:00
-  #   ports:
-  #     - 8888:8888
-  #   restart: on-failure
-  #   volumes:
-  #     - /var/run/docker.sock:/var/run/docker.sock
-  #     - /opt/jupyterlab:/opt/app/data
+
+  unifi:
+    image: jacobalberty/unifi:latest
+    container_name: unifi
+    environment:
+      - TZ=America/Los_Angeles # offset = -08:00 / DST -07:00
+    #network_mode: host
+    ports:
+      - 3478:3478/udp
+      - 10001:10001/udp
+      - 6789:6789/tcp
+      - 8080:8080/tcp
+      - 8880:8880/tcp
+      - 8443:8443/tcp
+      - 8843:8843/tcp
+    restart: on-failure
+    volumes:
+      - /opt/unifi/data:/unifi/data:rw
+      - /opt/unifi:/unifi
+      - /opt/unifi/run:/var/run/unifi
+      - /etc/localtime:/etc/localtime:ro
+
+  #MySQL/MariaDB Web Admin
+  adminer:
+    image: adminer
+    container_name: adminer
+    environment:
+      - TZ=America/Los_Angeles # offset = -08:00 / DST -07:00
+    ports:
+      - 8100:8080
+    restart: always
+    volumes:
+      - /etc/localtime:/etc/localtime:ro

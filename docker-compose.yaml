@@ -33,6 +33,21 @@ services:
       - /opt/mosquitto:/mosquitto/data:rw
       - /opt/mosquitto:/mosquitto/log:rw
 
+  esphome:
+    container_name: esphome
+    # devices:
+    #   - /dev/ttyUSB0:/dev/ttyUSB0
+    image: ottowinter/esphomeyaml
+    environment:
+      - TZ=America/Los_Angeles # offset = -08:00 / DST -07:00
+    ports:
+      - 6052:6052
+      - 6123:6123
+    restart: always
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /opt/esphome:/config
+
   influxdb:
     image: influxdb
     container_name: influxdb

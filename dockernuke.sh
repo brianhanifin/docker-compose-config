@@ -1,6 +1,6 @@
 #!/bin/bash
 cd /opt
-docker-compose down
-docker system prune --all --volumes
-#docker-compose up -d &
-docker-compose up -d
+sudo docker-compose down
+sudo docker system prune --all --volumes
+#sudo docker-compose up -d &
+sudo docker-compose up -d

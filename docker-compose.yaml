@@ -371,7 +371,6 @@ services:
     container_name: unifi
     environment:
       - TZ=America/Los_Angeles # offset = -08:00 / DST -07:00
-    #network_mode: host
     ports:
       - 3478:3478/udp
       - 10001:10001/udp
@@ -385,6 +384,23 @@ services:
       - /opt/unifi/data:/unifi/data:rw
       - /opt/unifi:/unifi
       - /opt/unifi/run:/var/run/unifi
+      - /etc/localtime:/etc/localtime:ro
+
+  unms:
+    #image: ubnt/unms:0.13.3-rc.1
+    image: oznu/unms:latest
+    container_name: unms
+    environment:
+      - TZ=America/Los_Angeles # offset = -08:00 / DST -07:00
+      - PUBLIC_HTTPS_PORT=9443
+      - PUBLIC_WS_PORT=9443
+    ports:
+      - 2055:2055/udp
+      - 9080:80/tcp
+      - 9443:443/tcp
+    restart: always
+    volumes:
+      - /opt/unms:/config
       - /etc/localtime:/etc/localtime:ro
 
   #MySQL/MariaDB Web Admin

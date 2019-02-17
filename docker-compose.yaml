@@ -35,11 +35,14 @@ services:
 
   esphome:
     container_name: esphome
+    #image: esphome/esphome
+    image: esphome/esphome:dev
+    #image: ottowinter/esphomeyaml
     # devices:
     #   - /dev/ttyUSB0:/dev/ttyUSB0
-    image: ottowinter/esphomeyaml
     environment:
       - TZ=America/Los_Angeles # offset = -08:00 / DST -07:00
+    network_mode: host
     ports:
       - 6052:6052
       - 6123:6123

@@ -35,9 +35,8 @@ services:
 
   esphome:
     container_name: esphome
-    #image: esphome/esphome
-    image: esphome/esphome:dev
-    #image: ottowinter/esphomeyaml
+    image: esphome/esphome
+    #image: esphome/esphome:dev
     # devices:
     #   - /dev/ttyUSB0:/dev/ttyUSB0
     environment:
@@ -86,10 +85,12 @@ services:
       - /opt/grafana:/var/lib/grafana:rw
 
   homeassistant:
-    image: homeassistant/home-assistant
+    #image: homeassistant/home-assistant
     #image: homeassistant/home-assistant:0.85.1
     #image: homeassistant/home-assistant:rc
     #image: homeassistant/home-assistant:dev
+    build:
+      context: ./homeassistant/docker
     container_name: homeassistant
     depends_on:
       - mysql
@@ -166,7 +167,7 @@ services:
       - 3306:3306
     restart: always
     volumes:
-      - "/opt/mariadb:/var/lib/mysql"
+      - "/opt/mysql:/var/lib/mysql"
       - /etc/localtime:/etc/localtime:ro
 
   plex:
@@ -353,3 +354,4 @@ services:
     restart: always
     volumes:
       - /etc/localtime:/etc/localtime:ro
+      - /opt/adminer:/var/www/html/temp

@@ -13,7 +13,7 @@ services:
     ports:
        - 80:80
        - 443:443
-    restart: on-failure
+    restart: unless-stopped
     volumes:
       - /opt/letsencrypt:/config:rw
       - /etc/localtime:/etc/localtime:ro
@@ -25,7 +25,7 @@ services:
       - TZ=America/Los_Angeles # offset = -08:00 / DST -07:00
     ports:
       - 1883:1883
-    restart: on-failure
+    restart: unless-stopped
     user: "1000:1000"
     volumes:
       - /etc/localtime:/etc/localtime:ro
@@ -45,7 +45,7 @@ services:
     ports:
       - 6052:6052
       - 6123:6123
-    restart: always
+    restart: unless-stopped
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /opt/esphome:/config
@@ -64,7 +64,7 @@ services:
     ports:
       - 8083:8083
       - 8086:8086
-    restart: on-failure
+    restart: unless-stopped
     volumes:
       - /opt/influxdb/influxdb.conf:/etc/influxdb/influxdb.conf:ro
       - /opt/influxdb:/var/lib/influxdb
@@ -78,17 +78,17 @@ services:
       - TZ=America/Los_Angeles # offset = -08:00 / DST -07:00
     ports:
       - 3000:3000
-    restart: on-failure
+    restart: unless-stopped
     user: "1000:1000"
     volumes:
       - /opt/grafana:/etc/grafana:rw
       - /opt/grafana:/var/lib/grafana:rw
 
   homeassistant:
-    #image: homeassistant/home-assistant
-    #image: homeassistant/home-assistant:0.85.1
-    #image: homeassistant/home-assistant:rc
-    #image: homeassistant/home-assistant:dev
+    # image: homeassistant/home-assistant
+    # image: homeassistant/home-assistant:0.88.0
+    # image: homeassistant/home-assistant:rc
+    # image: homeassistant/home-assistant:dev
     build:
       context: ./homeassistant/docker
     container_name: homeassistant
@@ -96,7 +96,7 @@ services:
       - mysql
       - mosquitto
     devices:
-      - /dev/ttyACM0:/zwaveusbstick
+      - /dev/ttyACM1:/zwaveusbstick
     environment:
       - TZ=America/Los_Angeles # offset = -08:00 / DST -07:00
     healthcheck:
@@ -112,7 +112,7 @@ services:
     network_mode: host
     ports:
       - "8123:8123"
-    restart: on-failure
+    restart: unless-stopped
     volumes:
       - /opt/homeassistant/config:/config
       - /etc/letsencrypt:/etc/letsencrypt:ro
@@ -138,7 +138,7 @@ services:
   #   ##network_mode: host
   #   ports:
   #     - "9123:8123"
-  #   #restart: on-failure
+  #   #restart: unless-stopped
   #   volumes:
   #     - /opt/homeassistant/config_dev:/config
   #     - /etc/letsencrypt:/etc/letsencrypt:ro
@@ -150,8 +150,8 @@ services:
     environment:
       - TZ=America/Los_Angeles # offset = -08:00 / DST -07:00
     ports:
-      - 9000:9000
-    restart: on-failure
+      - 900:9000
+    restart: unless-stopped
     volumes:
       - /opt/portainer:/data:rw
       - /var/run/docker.sock:/var/run/docker.sock
@@ -165,31 +165,9 @@ services:
       MYSQL_DATABASE: homeassistant
     ports:
       - 3306:3306
-    restart: always
+    restart: unless-stopped
     volumes:
       - "/opt/mysql:/var/lib/mysql"
-      - /etc/localtime:/etc/localtime:ro
-
-  plex:
-    container_name: plex
-    environment:
-      - TZ=America/Los_Angeles # offset = -08:00 / DST -07:00
-    image: plexinc/pms-docker
-    ports:
-      - 1900:1900/udp
-      - 3005:3005/tcp
-      - 32400:32400/tcp
-      - 32410:32410/udp
-      - 32412:32412/udp
-      - 32413:32413/udp
-      - 32414:32414/udp
-      - 32469:32469/tcp
-      - 8324:8324/tcp
-    restart: always
-    volumes:
-      - /opt/plex/temp:/transcode:rw
-      - /opt/plex:/config:rw
-      - /media/backup:/data:rw
       - /etc/localtime:/etc/localtime:ro
 
   dockermon:
@@ -199,10 +177,23 @@ services:
       - TZ=America/Los_Angeles # offset = -08:00 / DST -07:00
     ports:
       - 8126:8126
-    restart: on-failure
+    restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /opt/dockermon:/config
+
+  # custom-component-store:
+  #   image: ludeeus/custom-component-store
+  #   container_name: custom-component-store
+  #   environment:
+  #     - TZ=America/Los_Angeles # offset = -08:00 / DST -07:00
+  #     - USERNAME=
+  #     - PASSWORD=
+  #   ports:
+  #     - 8111:8100
+  #   restart: unless-stopped
+  #   volumes:
+  #     - /opt/homeassistant/config:/config
 
   nodered:
     image: nodered/node-red-docker:v8
@@ -223,7 +214,7 @@ services:
     ports:
       - 1880:1880
       - 9229:9229
-    restart: always
+    restart: unless-stopped
     #user: root
     user: "1000:1000"
     volumes:
@@ -233,6 +224,47 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
 
+  heimdall:
+    image: linuxserver/heimdall
+    container_name: heimdall
+    environment:
+      - TZ=America/Los_Angeles # offset = -08:00 / DST -07:00
+      - PUID=1000
+      - PGID=1000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    ports:
+      - 81:80
+    restart: unless-stopped
+    volumes:
+      - /opt/heimdall/config:/config
+      - /etc/localtime:/etc/localtime:ro
+
+  plex:
+    container_name: plex
+    environment:
+      - TZ=America/Los_Angeles # offset = -08:00 / DST -07:00
+    image: plexinc/pms-docker
+    ports:
+      - 1900:1900/udp
+      - 3005:3005/tcp
+      - 32400:32400/tcp
+      - 32410:32410/udp
+      - 32412:32412/udp
+      - 32413:32413/udp
+      - 32414:32414/udp
+      - 32469:32469/tcp
+      - 8324:8324/tcp
+    restart: unless-stopped
+    volumes:
+      - /opt/plex/temp:/transcode:rw
+      - /opt/plex:/config:rw
+      - /media/backup:/data:rw
+      - /etc/localtime:/etc/localtime:ro
+
   # tasmoadmin:
   #   image: raymondmm/tasmoadmin
   #   container_name: tasmoadmin
@@ -240,7 +272,7 @@ services:
   #     - TZ=America/Los_Angeles # offset = -08:00 / DST -07:00
   #   ports:
   #     - 9999:80/tcp
-  #   restart: on-failure
+  #   restart: unless-stopped
   #   volumes:
   #     - /var/run/docker.sock:/var/run/docker.sock
   #     - /opt/tasmoadmin:/data
@@ -255,7 +287,7 @@ services:
   #   cap_add:
   #     - NET_ADMIN
   #     - SYS_MODULE
-  #   restart: on-failure
+  #   restart: unless-stopped
   #   volumes:
   #     - /opt/wireguard:/etc/wireguard
   #     - /lib/modules:/lib/modules
@@ -282,7 +314,7 @@ services:
   #   ports:
   #     - 5050:5050
   #     - 5001:5001
-  #   restart: on-failure
+  #   restart: unless-stopped
   #   volumes:
   #     #- /opt/appdaemon:/conf
   #     - /opt/homeassistant/config/:/config
@@ -304,7 +336,7 @@ services:
       - 8880:8880/tcp
       - 8443:8443/tcp
       - 8843:8843/tcp
-    restart: on-failure
+    restart: unless-stopped
     volumes:
       - /opt/unifi/data:/unifi/data:rw
       - /opt/unifi:/unifi
@@ -323,7 +355,7 @@ services:
       - 2055:2055/udp
       - 9080:80/tcp
       - 9443:443/tcp
-    restart: always
+    restart: unless-stopped
     volumes:
       - /opt/unms:/config
       - /etc/localtime:/etc/localtime:ro
@@ -351,7 +383,21 @@ services:
       - TZ=America/Los_Angeles # offset = -08:00 / DST -07:00
     ports:
       - 8100:8080
-    restart: always
+    restart: unless-stopped
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /opt/adminer:/var/www/html/temp
+
+  # phpvirtualbox:
+  #   image: zensoftdevops/phpvirtualbox
+  #   container_name: phpvirtualbox
+  #   environment:
+  #     - TZ=America/Los_Angeles # offset = -08:00 / DST -07:00
+  #   network_mode: host
+  #   ports:
+  #     - 8181:80
+  #   restart: unless-stopped
+  #   volumes:
+  #     - /etc/localtime:/etc/localtime:ro
+  #     #- /opt/phpvirtualbox/config.php:/var/www/config.php
+  #     - /opt/phpvirtualbox:/var/www

@@ -1,9 +1,11 @@
 # Extension ignores
 ._*
 *.ovpn
+*.env
 
 # Specific file ignores
 .DS_Store
+config.php
 
 # Directory (contents) ignores
 /*

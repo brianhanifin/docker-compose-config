@@ -1,6 +1,5 @@
 version: '3.6'
 services:
-
   letsencrypt:
     container_name: letsencrypt
     environment:
@@ -401,3 +400,18 @@ services:
   #     - /etc/localtime:/etc/localtime:ro
   #     #- /opt/phpvirtualbox/config.php:/var/www/config.php
   #     - /opt/phpvirtualbox:/var/www
+
+  duplicati:
+    container_name: duplicati
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Los_Angeles # offset = -08:00 / DST -07:00
+    image: linuxserver/duplicati
+    ports:
+      - 8200:8200
+    restart: unless-stopped
+    volumes:
+      - /opt/duplicati:/config
+      - /media/backup/duplicati_backups:/backups
+      - /opt:/source

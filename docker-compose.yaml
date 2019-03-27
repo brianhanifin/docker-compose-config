@@ -4,14 +4,13 @@ services:
     container_name: letsencrypt
     environment:
       - EMAIL=code@brianhanifin.com
-      #- SUBDOMAINS=grafana,hass,jupyter,muximux,organizr,plex,portainer
       - SUBDOMAINS=hass,hub,plex
       - TZ=America/Los_Angeles # offset = -08:00 / DST -07:00
       - URL=home.brianhanifin.com
     image: linuxserver/letsencrypt
     ports:
-       - 80:80
-       - 443:443
+      - 80:80
+      - 443:443
     restart: unless-stopped
     volumes:
       - /opt/letsencrypt:/config:rw
@@ -84,18 +83,18 @@ services:
       - /opt/grafana:/var/lib/grafana:rw
 
   homeassistant:
-    # image: homeassistant/home-assistant
+    image: homeassistant/home-assistant
     # image: homeassistant/home-assistant:0.88.0
     # image: homeassistant/home-assistant:rc
     # image: homeassistant/home-assistant:dev
-    build:
-      context: ./homeassistant/docker
+    # build:
+    #   context: ./homeassistant/docker
     container_name: homeassistant
     depends_on:
       - mysql
       - mosquitto
     devices:
-      - /dev/ttyACM1:/zwaveusbstick
+      - /dev/ttyACM0:/zwaveusbstick
     environment:
       - TZ=America/Los_Angeles # offset = -08:00 / DST -07:00
     healthcheck:
@@ -414,4 +413,5 @@ services:
     volumes:
       - /opt/duplicati:/config
       - /media/backup/duplicati_backups:/backups
-      - /opt:/source
+      - /opt:/source/opt
+      - /media/backup:/source/usb_drive

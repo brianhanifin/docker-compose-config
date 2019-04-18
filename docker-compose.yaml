@@ -84,17 +84,22 @@ services:
 
   homeassistant:
     image: homeassistant/home-assistant
-    # image: homeassistant/home-assistant:0.88.0
-    # image: homeassistant/home-assistant:rc
-    # image: homeassistant/home-assistant:dev
+    #image: homeassistant/home-assistant:0.91.0
+    #image: homeassistant/home-assistant:rc
+    #image: homeassistant/home-assistant:dev
     # build:
     #   context: ./homeassistant/docker
     container_name: homeassistant
     depends_on:
       - mysql
       - mosquitto
+    # /dev/ttyACM0
+    # /dev/serial/by-id/usb-0658_0200-if00
+    # /dev/ttyACM1
+    # /dev/serial/by-id/usb-Rainforest_Automation__Inc._RFA-Z105-2_HW2.7.3_EMU-2-if00
     devices:
-      - /dev/ttyACM0:/zwaveusbstick
+      - /dev/serial/by-id/usb-0658_0200-if00:/zwaveusbstick
+      - /dev/serial/by-id/usb-Rainforest_Automation__Inc._RFA-Z105-2_HW2.7.3_EMU-2-if00:/rainforestemu2
     environment:
       - TZ=America/Los_Angeles # offset = -08:00 / DST -07:00
     healthcheck:
@@ -113,6 +118,7 @@ services:
     restart: unless-stopped
     volumes:
       - /opt/homeassistant/config:/config
+      - /opt/homeassistant/icons/:/usr/local/lib/python3.6/site-packages/hass_frontend/icons/
       - /etc/letsencrypt:/etc/letsencrypt:ro
       - /etc/localtime:/etc/localtime:ro
 

@@ -84,7 +84,8 @@ services:
 
   homeassistant:
     image: homeassistant/home-assistant
-    #image: homeassistant/home-assistant:0.91.0
+    #image: homeassistant/home-assistant:0.91.3
+    #image: homeassistant/home-assistant:0.92.0b2
     #image: homeassistant/home-assistant:rc
     #image: homeassistant/home-assistant:dev
     # build:

@@ -3,10 +3,10 @@ services:
   letsencrypt:
     container_name: letsencrypt
     environment:
-      - EMAIL=code@brianhanifin.com
+      - EMAIL=code@example.com
       - SUBDOMAINS=hass,hub,plex
       - TZ=America/Los_Angeles # offset = -08:00 / DST -07:00
-      - URL=home.brianhanifin.com
+      - URL=home.example.com
     image: linuxserver/letsencrypt
     ports:
       - 80:80
